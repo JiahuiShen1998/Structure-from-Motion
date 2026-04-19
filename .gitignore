@@ -1,0 +1,5 @@
+*.zip
+*.mp4
+*.db
+__pycache__/
+*.pyc
