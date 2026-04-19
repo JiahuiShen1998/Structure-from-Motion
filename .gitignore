@@ -2,4 +2,8 @@
 *.mp4
 *.db
 __pycache__/
+*.pyc*.zip
+*.mp4
+*.db
+__pycache__/
 *.pyc
