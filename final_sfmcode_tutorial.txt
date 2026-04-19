@@ -1,0 +1,39 @@
+Tutorial for final sfm
+Windows system:
+
+1. Download File :
+(1) Anaconda : https://repo.anaconda.com/archive/Anaconda3-2023.07-1-Windows-x86_64.exe 
+      install
+(2) Colamp open source: https://github.com/colmap/colmap/releases/tag/3.11.0  (colmap-x64-windows-cuda.zip)
+      Unzip 
+(3) download "final" folder
+
+
+2. Environment setting:
+(1) Put the "final" folder and the extracted "colmap-x64-windows-cuda" folder on the same disk.
+(2) Enter to "Anaconda Powershell Prompt"  (It can be found in the search bar below your desktop)
+(3) Navigate to the "final" folder in Anaconda Powershell Prompt
+(4) Enter the command ：conda env create -f environment.yml -n sfm2  
+
+
+3. Fix the code
+(1) Open the "final" file with the compiler (eg. pycharm or vscode)
+(2) Choose the sfm_pipeline.py
+(3) fix the "colmap.exe" path on line 365 (this exe file is in colmap-x64-windows-cuda/bin) and save
+
+
+4. Run the code
+*put images you want to reconstruct in "final/workspace/images"folder first.
+(1) Restart "Anaconda Powershell Prompt" 
+(2) Navigate to the "final" folder in Anaconda Powershell Prompt
+(3) Enter the command: conda activate sfm2
+(4) Enter the command: python .\sfm_pipeline.py (then waiting for 3 to 4 seconds, it will start to find feature points)
+
+sparse reconstruction : after few minutes, the sparse reconstruction visualization window will be shown
+
+dense reconstruction : (1) : You need to close the sparse reconstruction visualization window before the dense reconstruction could start.
+                       (2) : Viewing the progress of dense reconstruction : there are some bin file would be shown in path "final"-"workspace"-"sfm"-"dense"-"sparse".
+                       (3) : After performing photogrammetric and geometric processing on all images, the dense reconstruction window would be shown.
+
+
+Note : adapt paths of video or image files from your own PC 
