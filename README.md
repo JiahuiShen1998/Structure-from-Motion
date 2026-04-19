@@ -165,6 +165,38 @@ python show_points.py
 
 Because this is a cleaned version of the original team project, some large raw inputs and intermediate artifacts were intentionally removed.
 
+## Showcase Script
+
+A cleaned showcase script adapted from the original project code is available in:
+
+```text
+scripts/portfolio_sift_matching.py
+```
+
+This script demonstrates:
+
+- Shi-Tomasi corner detection
+- SIFT descriptor computation
+- FLANN-based feature matching
+- Lowe ratio test
+- RANSAC-based fundamental matrix verification
+- visualization of keypoints and inlier matches
+
+Example usage:
+
+```bash
+python3 scripts/portfolio_sift_matching.py \
+  --img1 "./final/workspace/images/frame_95.jpg" \
+  --img2 "./final/workspace/images/frame_96.jpg" \
+  --output_dir outputs \
+  --use_flann
+```
+
+A sample output visualization is provided in:
+
+```text
+outputs/matches_after_ransac.jpg
+```
 ## My Contribution
 
 For portfolio purposes, my contribution is best represented in the following aspects:
