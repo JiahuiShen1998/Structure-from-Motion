@@ -1,0 +1,21 @@
+# Developed and executed on Python 3.9.21 (Windows 11).
+# Versions below are the ones pinned in environment.yml, i.e. the exact set the
+# pipeline was actually run with. Newer versions are likely fine; these are the
+# ones that are known to work.
+
+numpy==1.26.4
+opencv-python==4.10.0.84   # conda build was py-opencv 4.10.0. SIFT lives in the
+                           # main package since OpenCV 4.4 -- opencv-contrib is
+                           # NOT required.
+matplotlib==3.9.2          # used only by draw_keypoints_on_image()'s display path
+open3d==0.18.0             # point cloud visualisation (stages 05, tools/)
+pycolmap==3.11.1           # incremental mapper, triangulation, bundle adjustment
+enlighten==1.13.0          # registration progress bar
+
+# Not installable via pip:
+#   COLMAP 3.11.0, CUDA build. Dense reconstruction shells out to colmap.exe
+#   (image_undistorter / patch_match_stereo / stereo_fusion). The CPU build has no
+#   PatchMatch stereo. See docs/setup_windows.md.
+#
+# environment.yml additionally pins scipy==1.13.1, but no module in this repository
+# imports scipy. It is omitted here on purpose.

@@ -1,9 +1,47 @@
+# --- Python ---
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.ipynb_checkpoints/
+
+# --- Pipeline run outputs ---
+# Stage 05 writes everything under a workspace/ directory. Keep the layout,
+# not the contents.
+**/workspace/database.db
+**/workspace/sfm/
+**/workspace/dense/
+**/workspace/visualizations/
+**/workspace/INFO.log*
+*.ply
+
+# Stage 01/02/03 side-effects (scripts write these into the CWD)
+calibration_images_with_corners/
+keypoints_img*.jpg
+match_with_corners_no_ransac.jpg
+*.npz
+
+# --- Raw media ---
+# Video and image archives are too large for git (the original repository carried
+# 6.5 GB of MP4 and was unclonable). See docs/data.md.
+*.mp4
+*.mov
 *.zip
-*.mp4
-*.db
-__pycache__/
-*.pyc*.zip
-*.mp4
-*.db
-__pycache__/
-*.pyc
+
+# --- Documents that are regenerated, not authored here ---
+*.pptx
+*.docx
+~$*
+
+# --- OS / editor ---
+.DS_Store
+Thumbs.db
+desktop.ini
+.vscode/
+.idea/
+*.swp
+
+# Keep the recorded reconstruction database: it is the only quantitative
+# artifact in the repository and the README cites its contents.
+!05_reconstruction/workspace/database.db
