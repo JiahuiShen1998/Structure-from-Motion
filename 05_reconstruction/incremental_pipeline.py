@@ -37,7 +37,9 @@ def save_reconstruction_snapshot(reconstruction, snapshot_path):
         snapshot_path (pathlib.Path): Folder path to save snapshot.
     """
     logging.info("Creating snapshot...")
-    timestamp = time.time() * 1000
+    # int(): time.time() * 1000 is a float, and the :010d format spec rejects
+    # floats with a ValueError. Only reachable when snapshot_images_freq > 0.
+    timestamp = int(time.time() * 1000)
     path = snapshot_path / f"{timestamp:010d}"
     path.mkdir(exist_ok=True, parents=True)
     logging.verbose(1, f"=> Writing snapshot to: {path}")

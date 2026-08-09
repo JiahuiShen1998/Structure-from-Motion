@@ -1,46 +1,94 @@
-import cv2 as cv
+"""Sample frames from a video at a fixed interval.
+
+The front of the pipeline: the fisheye footage is continuous video, but SfM wants a
+set of stills with enough baseline between them. Every 10th frame was used for the
+recorded run, turning a ~600-frame clip into ~60 images.
+
+Input   a video file readable by OpenCV
+Output  frame_00.jpg, frame_01.jpg, ... in the output directory
+
+Choosing the interval is a trade-off. Too small and consecutive frames are nearly
+identical: matching still succeeds but the triangulation angle is tiny, so the 3D
+points are poorly constrained and the mapper may refuse the pair. Too large and the
+viewpoint change between frames outruns SIFT's robustness, matches collapse, and the
+reconstruction splits into disconnected models. 10 worked for handheld walking pace at
+the capture frame rate; faster motion needs a smaller interval.
+
+Original name: video_cut.py. The frame-selection logic is unchanged; this adds a CLI
+and a zero-padding width that keeps filenames sortable past 100 frames.
+"""
+
+import argparse
 import os
 
-def save_image(video_source, output_folder, interval):
-    
-    output_folder = os.path.join(os.path.dirname(video_source), output_folder)
+import cv2 as cv
+
+
+def save_frames(video_source, output_folder, interval, prefix="frame_", width=2):
+    """Write every `interval`-th frame of `video_source` into `output_folder`.
+
+    Args:
+        video_source: path to the video file.
+        output_folder: directory to create and write into.
+        interval: keep one frame out of every `interval`. See the module docstring for
+            how to choose it.
+        prefix: filename prefix.
+        width: zero-padding width for the frame counter. The original used 2, which
+            collides once more than 100 frames are saved; it is widened automatically
+            if the video is long enough to need it.
+
+    Returns:
+        The number of frames written.
+    """
     os.makedirs(output_folder, exist_ok=True)
 
-    # open video file
-    cap1 = cv.VideoCapture(video_source)
-    if not cap1.isOpened():
-        print(f"cannot open: {video_source}")
-        return
+    cap = cv.VideoCapture(video_source)
+    if not cap.isOpened():
+        raise SystemExit(f"Cannot open video: {video_source}")
 
-    # Acquire information from video
-    fps = int(cap1.get(cv.CAP_PROP_FPS))  # Acquire fps
-    total_frames = int(cap1.get(cv.CAP_PROP_FRAME_COUNT))  
-    print(f"video information: FPS={fps}, Total frames={total_frames}")
+    fps = cap.get(cv.CAP_PROP_FPS)
+    total_frames = int(cap.get(cv.CAP_PROP_FRAME_COUNT))
+    print(f"[INFO] {video_source}: {fps:.2f} fps, {total_frames} frames")
+
+    expected = max(1, total_frames // max(1, interval))
+    width = max(width, len(str(expected)))
 
     frame_count = 0
     save_count = 0
-
     while True:
-        ret, frame = cap1.read()
-        if not ret:
-            print("Video read out.")
+        ok, frame = cap.read()
+        if not ok:
             break
-
-        # 按间隔保存帧
         if frame_count % interval == 0:
-            output_name = os.path.join(output_folder, f"frame_{save_count:02d}.jpg")
-            cv.imwrite(output_name, frame)
-            print(f"saved: {output_name}")
+            name = os.path.join(output_folder, f"{prefix}{save_count:0{width}d}.jpg")
+            cv.imwrite(name, frame)
             save_count += 1
-
         frame_count += 1
 
-    cap1.release()
-    print(f"The extraction is complete, a total of {save_count} images have been saved.")
+    cap.release()
+    print(f"[INFO] read {frame_count} frames, wrote {save_count} to {output_folder}")
+    return save_count
 
-# 设定输入视频和输出文件夹
-video_source = r"D:\AT_Master\Team_Project\recording\ParkingDeckStraight\114_ParkingDeckStraight_left.mp4"
-output_folder = "ParkingDeckStraight_images_left"  
-interval = 10  # Save one every 10 frames
 
-save_image(video_source, output_folder, interval)
+def parse_args():
+    parser = argparse.ArgumentParser(
+        description="Sample frames from a video at a fixed interval."
+    )
+    parser.add_argument("--video", required=True, help="Input video file")
+    parser.add_argument("--out", required=True, help="Directory to write frames into")
+    parser.add_argument("--interval", type=int, default=10,
+                        help="Keep one frame out of every N (default: 10)")
+    parser.add_argument("--prefix", default="frame_",
+                        help="Output filename prefix (default: frame_)")
+    return parser.parse_args()
+
+
+def main():
+    args = parse_args()
+    if args.interval < 1:
+        raise SystemExit("--interval must be at least 1")
+    save_frames(args.video, args.out, args.interval, prefix=args.prefix)
+
+
+if __name__ == "__main__":
+    main()

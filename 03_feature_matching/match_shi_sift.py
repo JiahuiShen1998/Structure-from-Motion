@@ -159,7 +159,12 @@ def run_feature_matching(
     matches = matcher.knnMatch(descriptors1, descriptors2, k=2)
 
     good_matches = ratio_test_filter(matches, ratio=ratio_threshold)
-    good_matches = good_matches[:num_matches]
+    # Sort by descriptor distance before any truncation: the raw matcher order is
+    # keypoint order, so slicing it keeps an arbitrary subset rather than the best
+    # ones. Truncation itself is deferred to the drawing step -- RANSAC should see
+    # every surviving correspondence, since discarding candidates first only makes
+    # the consensus set harder to find.
+    good_matches.sort(key=lambda m: m.distance)
 
     print(f"[INFO] Matches after ratio test: {len(good_matches)}")
 
@@ -185,7 +190,7 @@ def run_feature_matching(
         keypoints1,
         img2,
         keypoints2,
-        good_matches,
+        good_matches[:num_matches],
         None,
         matchColor=green,
         flags=cv.DrawMatchesFlags_NOT_DRAW_SINGLE_POINTS,
@@ -230,7 +235,8 @@ def parse_args():
         "--num_matches",
         type=int,
         default=250,
-        help="Maximum number of matches to visualize"
+        help="Maximum number of matches to draw. Visualization only -- RANSAC "
+             "always sees every match that passed the ratio test"
     )
     parser.add_argument(
         "--use_flann",

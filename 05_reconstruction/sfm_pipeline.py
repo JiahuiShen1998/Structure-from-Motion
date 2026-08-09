@@ -1,6 +1,27 @@
+"""Run the full reconstruction: SIFT -> COLMAP database -> incremental SfM -> dense.
+
+Stage 05, and the only stage that produced the published results. It re-extracts and
+re-matches features rather than consuming stage 03's output.
+
+Input   undistorted images in <workspace>/images/
+Output  <workspace>/database.db          keypoints, descriptors, verified matches
+        <workspace>/sfm/0/points3D.bin   sparse model
+        <workspace>/sfm/dense/fused.ply  dense point cloud
+        <workspace>/visualizations/      one keypoint overlay per input image
+
+Feature extraction and pairwise matching run in OpenCV and are written into a
+COLMAP-format SQLite database; registration, triangulation and bundle adjustment run
+through pycolmap; dense stereo shells out to the COLMAP CUDA binary, which the CPU
+build cannot do.
+
+Two Open3D windows open in sequence. The dense stage does not start until the sparse
+window is closed -- the viewer call blocks.
+"""
+
+import argparse
 import os
-import cv2
 import shutil
+import cv2
 import itertools
 import numpy as np
 import matplotlib.pyplot as plt
@@ -357,16 +378,27 @@ def run_colmap_command(cmd, cwd=None):
         print("Error output:", e.stderr)
         raise
 
-def set_colmap_path():
+DEFAULT_COLMAP_PATH = os.environ.get("COLMAP_EXE", "colmap")
+
+
+def set_colmap_path(colmap_path=None):
+    """Resolve the COLMAP executable, or return None if it cannot be found.
+
+    Dense reconstruction needs the CUDA build: the CPU build has no PatchMatch stereo.
+    Order of precedence is the --colmap argument, then $COLMAP_EXE, then whatever
+    `colmap` resolves to on PATH.
     """
-    set COLMAP executable file。
-    """
-    # Here you need to modify it according to your actual position
-    colmap_path = r"D:/AT_Master/Team_Project/colmap/bin/colmap.exe"
+    colmap_path = colmap_path or DEFAULT_COLMAP_PATH
+    if not os.path.isabs(colmap_path) and not os.path.isfile(colmap_path):
+        found = shutil.which(colmap_path)
+        if found:
+            print(f"COLMAP executable is set to: {found}\n")
+            return found
     if not os.path.isfile(colmap_path):
-        print(f"error: can not find COLMAP.exe file '{colmap_path}'.please check the path.")
+        print(f"error: cannot find the COLMAP executable at '{colmap_path}'. "
+              f"Pass --colmap /path/to/colmap, or set $COLMAP_EXE.")
         return None
-    print(f"COLMAPpath executable is set to: {colmap_path}\n")
+    print(f"COLMAP executable is set to: {colmap_path}\n")
     return colmap_path
 
 
@@ -426,7 +458,7 @@ def show_stereo_result(dense_ply_file):
 
     print(f"upload the point cloud file: {dense_ply_file}")
     pcd = o3d.io.read_point_cloud(dense_ply_file)
-    print(f"The point cloud contains {len(pcd.points)} points to start the visualisation...")")
+    print(f"The point cloud contains {len(pcd.points)} points; starting visualisation...")
 
     # 初始化 GUI 系统
     app = o3d.visualization.gui.Application.instance
@@ -440,7 +472,8 @@ def show_stereo_result(dense_ply_file):
     app.run()
 
     
-def run_pipeline():
+def run_pipeline(workspace="workspace", colmap_path=None, skip_dense=False,
+                 show=True):
     """
     Main pipeline:
         1) Extract features 
@@ -450,7 +483,7 @@ def run_pipeline():
         5) Dense reconstruction
         6) Dense reconstruction visualisation
     """
-    output_path = Path("workspace/")
+    output_path = Path(workspace)
     image_path = output_path / "images"
     database_path = output_path / "database.db"
     vis_path = output_path / "visualizations"
@@ -483,10 +516,14 @@ def run_pipeline():
         logging.info(f"# {idx} {rec.summary()}")
 
     # 4) Sparse reconstruction visualization
-    show_sparse_pointcloud(os.path.join(str(sfm_path), "0"))
+    if show:
+        show_sparse_pointcloud(os.path.join(str(sfm_path), "0"))
 
     # 5) Dense reconstruction
-    colmap_exe = set_colmap_path()
+    if skip_dense:
+        print("Skipping dense reconstruction (--skip-dense).")
+        return
+    colmap_exe = set_colmap_path(colmap_path)
     if not colmap_exe:
         print("Unable to perform dense reconstruction: COLMAP executable not found.")
         return
@@ -502,9 +539,29 @@ def run_pipeline():
     )
 
     # 6) Dense reconstruction visualization
-    dense_ply_file = os.path.join(str(dense_dir), "fused.ply") 
-    show_stereo_result(dense_ply_file)
+    dense_ply_file = os.path.join(str(dense_dir), "fused.ply")
+    if show:
+        show_stereo_result(dense_ply_file)
+
+
+def parse_args():
+    parser = argparse.ArgumentParser(
+        description="Run the full SfM reconstruction (stage 05)."
+    )
+    parser.add_argument("--workspace", default="workspace",
+                        help="Workspace directory; images are read from "
+                             "<workspace>/images (default: workspace)")
+    parser.add_argument("--colmap", default=None,
+                        help="Path to the COLMAP CUDA executable. Falls back to "
+                             "$COLMAP_EXE, then to `colmap` on PATH")
+    parser.add_argument("--skip-dense", action="store_true",
+                        help="Stop after sparse reconstruction")
+    parser.add_argument("--no-show", action="store_true",
+                        help="Do not open Open3D windows (required when headless)")
+    return parser.parse_args()
 
 
 if __name__ == "__main__":
-    run_pipeline()
+    args = parse_args()
+    run_pipeline(workspace=args.workspace, colmap_path=args.colmap,
+                 skip_dense=args.skip_dense, show=not args.no_show)
