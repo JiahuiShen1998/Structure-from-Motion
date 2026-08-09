@@ -43,6 +43,11 @@ The raw 4K video frames are **circular fisheye** — the image circle does not f
 sensor, so there is a black surround. Rectification maps that circle onto a pinhole
 frame, which is why the output is both straighter and tighter than the input.
 
+![Fisheye distortion model](../docs/fisheye_distortion_model.png)
+
+<sub>Figure 2.2 from the project report: how an incidence angle theta maps to image
+radius under the fisheye model.</sub>
+
 ## How the resolution scaling works
 
 This is the part that goes wrong most often. `K` is only valid at the resolution it was
@@ -57,8 +62,8 @@ scaled_K[2][2] = 1.0            # the homogeneous 1 must not be scaled
 `D` is **not** scaled — the fisheye coefficients act on the normalised incidence angle
 θ, which is resolution-independent. Only `K` carries pixel units.
 
-The aspect-ratio assertion at the top of the function exists because a mismatch here is
-otherwise silent: the image comes out plausibly-shaped but geometrically wrong.
+`build_undistort_maps` raises on an aspect-ratio mismatch because the failure is
+otherwise silent: the image comes out plausibly shaped but geometrically wrong.
 
 ## Key parameters
 
@@ -94,9 +99,10 @@ expected them to default to the input size — `estimateNewCameraMatrixForUndist
 and `initUndistortRectifyMap` take different dimension arguments and passing `None` to
 both does not mean the same thing.
 
-**The map is rebuilt for every frame.** `initUndistortRectifyMap` is the expensive call
-and depends only on `K`, `D` and the resolution. Building it once outside the loop is a
-large speedup on a long sequence; the reference implementation does not do this.
+**Slow on a long sequence.** `initUndistortRectifyMap` is the expensive call and depends
+only on `K`, `D` and the resolution — `remap` itself is cheap. The report's listing
+rebuilds the table per frame; this script builds it once and reuses it, rebuilding only
+when the input resolution changes (which it logs).
 
 ## Downstream note
 

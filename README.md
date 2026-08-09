@@ -17,10 +17,16 @@ chessboard shot with the same lens at 1920×1080.
 **Output:** `points3D.bin` (sparse) and `fused.ply` (dense), plus a COLMAP database
 holding keypoints, descriptors and geometrically verified two-view matches.
 
-![SfM pipeline](docs/SfM_pipeline.png)
+**Stages 1–2** — capture, calibrate, rectify:
 
-<sub>Diagram from the project report source. To be replaced by `docs/sfm_pipeline.svg`
-once available; the label reads "Bundle Ajustment" in the original.</sub>
+![Capture and calibration workflow](docs/pipeline_capture_calibration.png)
+
+**Stages 3–5** — features, matching, database, reconstruction:
+
+![SfM workflow](docs/pipeline_sfm.png)
+
+<sub>Both figures are the workflow diagrams from the project report (figures 2.1 and
+2.3). "Ajustment" is the original's typo.</sub>
 
 ---
 
