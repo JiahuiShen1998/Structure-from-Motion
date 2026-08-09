@@ -1,0 +1,73 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1120 220" width="1120" role="img"
+     aria-label="SfM workflow: frames, feature extraction and matching seeded by SIFT, COLMAP database, geometric relations, bundle adjustment, sparse and dense reconstruction">
+  <style>
+    :root { color-scheme: light dark; }
+    .bx   { fill: #ffffff; stroke: #24292f; stroke-width: 1.4; }
+    .tx   { fill: #1f2328; font: 13px/1.3 -apple-system, "Segoe UI", Helvetica, Arial, sans-serif;
+            text-anchor: middle; dominant-baseline: middle; }
+    .ln   { stroke: #24292f; stroke-width: 1.4; fill: none; }
+    .hd   { fill: #24292f; }
+    @media (prefers-color-scheme: dark) {
+      .bx { fill: #0d1117; stroke: #b1bac4; }
+      .tx { fill: #e6edf3; }
+      .ln { stroke: #b1bac4; }
+      .hd { fill: #b1bac4; }
+    }
+  </style>
+  <defs>
+    <marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7"
+            orient="auto-start-reverse">
+      <path class="hd" d="M0 0 L10 5 L0 10 z"/>
+    </marker>
+  </defs>
+
+  <!-- row 1 -->
+  <rect class="bx" x="12"  y="24" width="88"  height="48" rx="3"/>
+  <text class="tx" x="56"  y="48">Frames</text>
+
+  <rect class="bx" x="140" y="24" width="152" height="48" rx="3"/>
+  <text class="tx" x="216" y="48">Feature extraction</text>
+
+  <rect class="bx" x="332" y="24" width="152" height="48" rx="3"/>
+  <text class="tx" x="408" y="48">Feature matching</text>
+
+  <rect class="bx" x="576" y="24" width="152" height="48" rx="3"/>
+  <text class="tx" x="652" y="48">Geometric relations</text>
+
+  <rect class="bx" x="768" y="24" width="144" height="48" rx="3"/>
+  <text class="tx" x="840" y="40">Bundle</text>
+  <text class="tx" x="840" y="56">Adjustment</text>
+
+  <rect class="bx" x="952" y="24" width="152" height="48" rx="3"/>
+  <text class="tx" x="1028" y="40">Sparse and dense</text>
+  <text class="tx" x="1028" y="56">reconstruction</text>
+
+  <!-- row 2 -->
+  <rect class="bx" x="272" y="128" width="80"  height="44" rx="3"/>
+  <text class="tx" x="312" y="150">SIFT</text>
+
+  <rect class="bx" x="500" y="128" width="112" height="44" rx="3"/>
+  <text class="tx" x="556" y="150">Database</text>
+
+  <rect class="bx" x="664" y="128" width="112" height="44" rx="3"/>
+  <text class="tx" x="720" y="150">COLMAP</text>
+
+  <!-- horizontal chain -->
+  <path class="ln" marker-end="url(#a)" d="M100 48 H134"/>
+  <path class="ln" marker-end="url(#a)" d="M292 48 H326"/>
+  <path class="ln" marker-end="url(#a)" d="M728 48 H762"/>
+  <path class="ln" marker-end="url(#a)" d="M912 48 H946"/>
+
+  <!-- SIFT feeds both feature stages -->
+  <path class="ln" marker-end="url(#a)" d="M272 150 H196 V78"/>
+  <path class="ln" marker-end="url(#a)" d="M352 150 H432 V78"/>
+
+  <!-- matching -> database -> colmap -->
+  <path class="ln" marker-end="url(#a)" d="M408 72 V150 H494"/>
+  <path class="ln" marker-end="url(#a)" d="M612 150 H658"/>
+
+  <!-- colmap feeds geometry, BA and the final result -->
+  <path class="ln" marker-end="url(#a)" d="M692 128 V96 H652 V78"/>
+  <path class="ln" marker-end="url(#a)" d="M752 128 V96 H840 V78"/>
+  <path class="ln" marker-end="url(#a)" d="M720 172 V196 H1028 V78"/>
+</svg>

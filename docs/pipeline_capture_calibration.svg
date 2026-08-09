@@ -1,0 +1,57 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 880 200" width="880" role="img"
+     aria-label="Capture and calibration workflow: fisheye video, capture, video frames, camera calibration, intrinsic parameters, undistorted, normal frames">
+  <style>
+    :root { color-scheme: light dark; }
+    .bx   { fill: #ffffff; stroke: #24292f; stroke-width: 1.4; }
+    .tx   { fill: #1f2328; font: 13px/1.3 -apple-system, "Segoe UI", Helvetica, Arial, sans-serif;
+            text-anchor: middle; dominant-baseline: middle; }
+    .ln   { stroke: #24292f; stroke-width: 1.4; fill: none; }
+    .hd   { fill: #24292f; }
+    @media (prefers-color-scheme: dark) {
+      .bx { fill: #0d1117; stroke: #b1bac4; }
+      .tx { fill: #e6edf3; }
+      .ln { stroke: #b1bac4; }
+      .hd { fill: #b1bac4; }
+    }
+  </style>
+  <defs>
+    <marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7"
+            orient="auto-start-reverse">
+      <path class="hd" d="M0 0 L10 5 L0 10 z"/>
+    </marker>
+  </defs>
+
+  <!-- row 1 -->
+  <rect class="bx" x="12"  y="28" width="104" height="48" rx="3"/>
+  <text class="tx" x="64"  y="44">fisheye</text>
+  <text class="tx" x="64"  y="60">video</text>
+
+  <rect class="bx" x="164" y="28" width="104" height="48" rx="3"/>
+  <text class="tx" x="216" y="52">Capture</text>
+
+  <rect class="bx" x="316" y="28" width="132" height="48" rx="3"/>
+  <text class="tx" x="382" y="52">video frames</text>
+
+  <rect class="bx" x="496" y="28" width="128" height="48" rx="3"/>
+  <text class="tx" x="560" y="44">Camera</text>
+  <text class="tx" x="560" y="60">calibration</text>
+
+  <rect class="bx" x="716" y="28" width="128" height="48" rx="3"/>
+  <text class="tx" x="780" y="52">normal frames</text>
+
+  <!-- row 2 -->
+  <rect class="bx" x="496" y="128" width="128" height="48" rx="3"/>
+  <text class="tx" x="560" y="144">Intrinsic</text>
+  <text class="tx" x="560" y="160">parameters</text>
+
+  <rect class="bx" x="716" y="128" width="128" height="48" rx="3"/>
+  <text class="tx" x="780" y="152">Undistorted</text>
+
+  <!-- arrows -->
+  <path class="ln" marker-end="url(#a)" d="M116 52 H158"/>
+  <path class="ln" marker-end="url(#a)" d="M268 52 H310"/>
+  <path class="ln" marker-end="url(#a)" d="M448 52 H490"/>
+  <path class="ln" marker-end="url(#a)" d="M560 76 V122"/>
+  <path class="ln" marker-end="url(#a)" d="M624 152 H710"/>
+  <path class="ln" marker-end="url(#a)" d="M780 128 V82"/>
+</svg>

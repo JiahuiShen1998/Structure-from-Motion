@@ -19,14 +19,15 @@ holding keypoints, descriptors and geometrically verified two-view matches.
 
 **Stages 1–2** — capture, calibrate, rectify:
 
-![Capture and calibration workflow](docs/pipeline_capture_calibration.png)
+![Capture and calibration workflow](docs/pipeline_capture_calibration.svg)
 
 **Stages 3–5** — features, matching, database, reconstruction:
 
-![SfM workflow](docs/pipeline_sfm.png)
+![SfM workflow](docs/pipeline_sfm.svg)
 
-<sub>Both figures are the workflow diagrams from the project report (figures 2.1 and
-2.3). "Ajustment" is the original's typo.</sub>
+<sub>Redrawn as vector from the project report's workflow diagrams (figures 2.1 and
+2.3), with the original's "Bundle Ajustment" typo corrected. Both adapt to light and
+dark themes.</sub>
 
 ---
 
