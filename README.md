@@ -119,7 +119,7 @@ iterations to find the consensus set.
 |---|---|---|---|
 | `CHECKERBOARD` | stage 1 | `(9, 7)` | Inner corner count, not square count. Wrong value → `findChessboardCorners` returns False on every image |
 | `subpix` window | stage 1 | `13×13` | Corner refinement search radius. Too large on a fisheye frame pulls in curved neighbouring edges; too small loses sub-pixel accuracy |
-| `CALIB_CHECK_COND` | stage 1 | **disabled** | Would abort calibration when an input view is ill-conditioned. Disabling it lets the fit proceed on marginal views and silently absorb their error |
+| `CALIB_CHECK_COND` | stage 1 | **disabled** | Aborts when a view is ill-conditioned. Not an oversight: with it enabled, the calibration set behind every published result here is rejected outright. Exposed as `--check-cond` |
 | `balance` | stage 2 | `0.0` | 0 crops to the largest all-valid rectangle (no black corners, narrowest FOV); 1 keeps the full FOV with invalid borders |
 | `fov_scale` | stage 2 | `0.8` | Shrinks the output focal length, widening the visible field at the cost of resolution per pixel |
 | `ratio_test` | stage 5 | `0.6` | Lowe's ratio. Lower = fewer, cleaner matches. Tightening from 0.55 → 0.6 was the one parameter changed between pipeline iterations |
@@ -139,16 +139,18 @@ From `05_reconstruction/workspace/database.db`, produced from 48 frames
 - **1003** geometrically verified pairs out of 1128 exhaustive pairs (88.9%)
 - **67.3** inliers per verified pair on average (range 7–437)
 
-Calibration, from 29 chessboard stills at 1920×1080:
+Calibration:
 
-- **20 of 29** images yielded a corner detection; 9 were rejected outright
-  (indices 01, 02, 05, 10, 12, 13, 15, 18, 28)
+- The published `K`/`D` come from a fit with an **RMS reprojection error of 204.5 px**.
+  A healthy chessboard calibration lands near 1 px. Two of the source views are jointly
+  degenerate; `CALIB_CHECK_COND` rejects the set outright, and dropping either one
+  yields intrinsics differing by a factor of 25 (fx 772 vs 191). Details and the
+  reproduction in [`01_calibration/README.md`](01_calibration/README.md).
 - `K = [[591.041, 0, 929.152], [0, 594.439, 535.872], [0, 0, 1]]` at 1920×1080
 - `D = [-0.0052148, -0.0304902, 0.0098051, -0.00013177]`
-- Three calibrations were run (residuals 204.5 / 227.8 / 302.0). The two rejected ones
-  converged to fx ≈ 825 with distortion coefficients 20–30× larger and alternating in
-  sign, and are unusable downstream — `estimateNewCameraMatrixForUndistortRectify`
-  collapses on them. See [`01_calibration/README.md`](01_calibration/README.md)
+- The chessboard stills committed here are *not* that source set: they detect 11 of 29
+  corners rather than 20 of 28, and calibrate to a different and much better-conditioned
+  solution (RMS 1.74 px, fx ≈ 604).
 
 The sparse and dense point clouds themselves are not committed — only the database that
 seeds them. Reported dense reconstruction time was 2–3 h on a current GPU and roughly
@@ -159,14 +161,20 @@ seeds them. Reported dense reconstruction time was 2–3 h on a current GPU and 
 ## Failure modes seen, and how they were tracked down
 
 **`findChessboardCorners` silently fails on a third of the calibration set.**
-The 9 rejected images are not obviously bad to the eye. On a fisheye lens the board
-bows enough near the frame border that the detector's quad-linking step cannot chain
-the rows, and it returns `False` with no diagnostic. The tell is the ratio printed at
-the end (`Number of valid images: 20`) rather than any error. The fix that was applied
-was to shoot more views than needed and accept the attrition; the flags
-`CALIB_CB_ADAPTIVE_THRESH | CALIB_CB_NORMALIZE_IMAGE` recover some of them by handling
-uneven illumination, but not the geometric failures. Keeping the board away from the
-extreme periphery is what actually helps.
+The rejected images are not obviously bad to the eye. On a fisheye lens the board bows
+enough near the frame border that the detector's quad-linking step cannot chain the
+rows, and it returns `False` with no diagnostic. The tell is only the final count, which
+the script now prints together with the rejected filenames. The source set loses 8 of 28;
+the stills committed here lose 18 of 29. The flags
+`CALIB_CB_ADAPTIVE_THRESH | CALIB_CB_NORMALIZE_IMAGE` recover the ones lost to uneven
+illumination, but not the geometric failures. Shooting more views than needed and
+keeping the board away from the extreme periphery is what actually helps.
+
+**Calibration aborts on `fabs(norm_u1) > 0`.** An OpenCV assertion deep in
+`InitExtrinsics`, naming neither the view nor the cause. `--check-cond` upgrades it to
+`Ill-conditioned matrix`, still unnamed; a leave-one-out sweep finds the culprits. On
+this dataset two views are jointly degenerate and dropping either lets it converge — to
+intrinsics that differ from each other by a factor of 25, which is the real lesson.
 
 **Calibration converges but the undistorted image is warped wrong.** This shows up as
 straight lines bending the *other* way after rectification. It comes from `K` being
@@ -209,11 +217,11 @@ with the intrinsics from the team's working copy, wrapped in a CLI. It is verifi
 rather than assumed: on a raw 4K frame it reproduces the team's archived rectified
 output to a mean absolute difference of 1.00 / 255, i.e. JPEG noise.
 
-**`05_reconstruction/sfm_pipeline.py` does not parse.** Line 429 carries a stray `")`
-introduced when the file's Chinese comments were translated to English; the earlier
-revision in the repository history is syntactically clean. The file is committed as-is
-rather than silently patched — see [`docs/known_bugs.md`](docs/known_bugs.md) for this
-and eight other defects found while documenting the code.
+**The calibration behind the published results did not converge.** RMS 204.5 px on an
+ill-conditioned view set. It happens to rectify the footage correctly — verified — but
+it is not trustworthy enough to use as a prior, and the reconstruction quietly works
+around it by registering a placeholder camera instead. Redoing the capture with better
+board coverage is the fix, and was not done.
 
 **Matching is exhaustive and O(n²).** 48 frames is 1128 pairs. This is fine at this
 scale and will not survive a few hundred frames. Sequential or vocabulary-tree matching
@@ -258,11 +266,21 @@ COLMAP's own fisheye camera models, would avoid the crop.
   worse: their alternating-sign coefficients make
   `estimateNewCameraMatrixForUndistortRectify` return a degenerate camera. Written up
   in [`01_calibration/README.md`](01_calibration/README.md).
-- Audited the pipeline against its archived outputs and documented nine defects in
-  [`docs/known_bugs.md`](docs/known_bugs.md), none of them patched, including the
-  syntax error that makes `sfm_pipeline.py` unparseable and the fact that the
-  calibrated intrinsics never reach the reconstruction — established by reading the
-  camera table out of the shipped `database.db`.
+- Gave every stage a uniform argparse CLI so it runs standalone, replacing paths
+  hardcoded to one developer's machine; `sfm_pipeline.py` now resolves COLMAP from
+  `--colmap`, `$COLMAP_EXE` or `PATH`, and can run headless.
+- Fixed the stray quote that made `sfm_pipeline.py` unparseable, a float passed to an
+  integer format spec in the snapshot path, and a truncation that fed RANSAC an
+  arbitrary 250-match subset in keypoint order instead of every candidate that passed
+  the ratio test — on the archived frame pair that takes RANSAC's input from 250 to 559,
+  of which 350 are inliers.
+- Turned `cv2.fisheye.calibrate`'s bare `fabs(norm_u1) > 0` assertion into a message
+  that names the diagnosis procedure, and added `--exclude` to act on it.
+- Audited the pipeline against its archived outputs and documented every defect in
+  [`docs/known_bugs.md`](docs/known_bugs.md), separating the ones safe to fix from the
+  ones that would change the results — among the latter, that the calibrated intrinsics
+  never reach the reconstruction, established by reading the camera table out of the
+  shipped `database.db`.
 
 <!-- TODO(author): the stages below still need attribution. For each, either
      "Implemented" (you wrote it) or "Ran and tuned" (someone else wrote it, you

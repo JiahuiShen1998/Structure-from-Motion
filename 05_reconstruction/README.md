@@ -13,11 +13,15 @@ with its own settings (ratio 0.6 instead of 0.7, RANSAC 2.0 px instead of 5.0, p
 
 ```bash
 python sfm_pipeline.py --workspace workspace/ --colmap /path/to/colmap.exe
+
+# sparse only, no windows -- works over SSH
+python sfm_pipeline.py --workspace workspace/ --skip-dense --no-show
 ```
 
 Put undistorted images in `<workspace>/images/` first. Dense reconstruction needs the
-CUDA build of COLMAP 3.11.0; without `--colmap` the pipeline stops after sparse
-reconstruction and its visualisation.
+CUDA build of COLMAP 3.11.0; the executable is resolved from `--colmap`, then
+`$COLMAP_EXE`, then `PATH`, and if none of them find it the pipeline stops after sparse
+reconstruction rather than failing.
 
 **Outputs**, all under `<workspace>/`:
 
@@ -78,16 +82,17 @@ current GPU and roughly 17 h on an older one.
 
 ## Failure modes
 
-**`SyntaxError` on import.** Line 429 has a stray `")` left over from translating the
-file's comments to English. The file does not parse as committed. Deliberately not
-patched — see [`../docs/known_bugs.md`](../docs/known_bugs.md).
+**`ModuleNotFoundError: pycolmap`.** The dense and sparse stages have different
+dependency footprints; `pip install -r requirements.txt` covers the Python side, but
+COLMAP itself is a separate binary. See the repository root README.
 
 **`No good initial image pair found`.** Covered in
 [`../04_geometry_estimation/README.md`](../04_geometry_estimation/README.md).
 
 **Dense reconstruction silently does nothing.** `set_colmap_path()` returns `None` when
-the hardcoded `colmap.exe` path does not exist, and `run_pipeline` returns early with a
-message. The sparse result is already written at that point, so it looks like success.
+COLMAP cannot be resolved, and `run_pipeline` returns early with a message naming the
+path it tried. The sparse result is already on disk at that point, so a skipped dense
+stage can read as success if you are not watching the log.
 
 **`patch_match_stereo` fails or produces empty depth maps.** Needs the **CUDA** build of
 COLMAP and a visible GPU at `gpu_index 0`. The CPU build has no PatchMatch stereo at

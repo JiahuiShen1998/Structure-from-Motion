@@ -112,9 +112,12 @@ before this point rather than letting OpenCV fail obscurely.
 dominant high-contrast object. Poorly spread correspondences give a badly conditioned
 `F` even when the inlier count looks healthy.
 
-## Remaining defect
+## Fixed while documenting
 
-`good_matches[:num_matches]` truncates to 250 **before** RANSAC and **without** sorting
-by descriptor distance, so the 250 retained are an arbitrary subset in matcher order
-rather than the 250 best. Carried over from the original experiment and not fixed. See
-[`../docs/known_bugs.md`](../docs/known_bugs.md).
+`good_matches[:num_matches]` used to truncate to 250 **before** RANSAC and **without**
+sorting, so the geometric check saw an arbitrary subset in keypoint order. Matches are
+now sorted by descriptor distance and the pre-RANSAC truncation is gone; `--num_matches`
+caps the drawing only. On `frame_95`/`frame_96` this takes RANSAC's input from an
+arbitrary 250 to all 559 candidates, of which 350 are inliers.
+
+See [`../docs/known_bugs.md`](../docs/known_bugs.md).

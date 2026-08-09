@@ -36,3 +36,15 @@ Papers that informed the pipeline. PDFs are not tracked in this repository.
 
 - C. Ma, L. Shi, H. Huang and M. Yan, "3D reconstruction from full-view fisheye
   camera," arXiv:1506.06273, 2015.
+
+**Consulted implementations**
+
+- H. Venkataraman, *3D Reconstruction using Structure from Motion*, MIT licence,
+  https://github.com/harish-vnkt/structure-from-motion. A pure OpenCV/NumPy incremental
+  SfM implementation, read as a reference for the registration and triangulation loop.
+  No code from it is used here — this pipeline delegates that loop to `pycolmap`.
+- COLMAP's `scripts/python/database.py` and `read_write_model.py`, BSD-3-Clause, vendored
+  unmodified under `05_reconstruction/third_party/`.
+- The `pycolmap` `custom_incremental_pipeline.py` / `custom_bundle_adjustment.py`
+  examples, whose structure `05_reconstruction/incremental_pipeline.py` and
+  `bundle_adjustment.py` follow.
