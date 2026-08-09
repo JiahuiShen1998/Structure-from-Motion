@@ -32,9 +32,10 @@ from pathlib import Path
 from pycolmap import logging
 
 # Custom modules
-import read_write_model as rw
+from third_party import read_write_model as rw
 import incremental_pipeline
-from database import COLMAPDatabase, array_to_blob, image_ids_to_pair_id
+from third_party.database import (COLMAPDatabase, array_to_blob,
+                                  image_ids_to_pair_id)
 
 
 
@@ -76,7 +77,7 @@ def match_features_opencv(database_path, vis_path, ratio_test=0.6, ransac_thresh
             kpts = np.frombuffer(blob, dtype=np.float32).reshape(r, c)
             keypoints_table[img_id] = kpts
         except Exception as e:
-            print(f"图像ID {img_id} 关键点加载失败 / Failed to load keypoints: {e}")
+            print(f"Failed to load keypoints for image {img_id}: {e}")
             continue
 
     #   - descriptors
@@ -86,12 +87,12 @@ def match_features_opencv(database_path, vis_path, ratio_test=0.6, ransac_thresh
         actual_size = len(blob)
         # each descriptor is 128 bytes
         if actual_size % expected_cols != 0:
-            print(f"警告: 图像ID {img_id} 描述符数据有误 / Descriptor size mismatch: {actual_size}")
+            print(f"Descriptor size mismatch for image {img_id}: {actual_size} bytes")
             continue
         r = actual_size // expected_cols
         try:
             desc_uint8 = np.frombuffer(blob, dtype=np.uint8).reshape(r, expected_cols)
-            desc_float = desc_uint8.astype(np.float32) / 512.0  # 逆向缩放 / reverse scale
+            desc_float = desc_uint8.astype(np.float32) / 512.0  # reverse the x512 scaling applied on write
             descriptors_table[img_id] = desc_float
         except ValueError as e:
             print(f"image ID {img_id} Descriptor reshape failed: {e}")
@@ -348,8 +349,8 @@ def show_sparse_pointcloud(sparse_path):
     pcd = o3d.geometry.PointCloud()
     pcd.points = o3d.utility.Vector3dVector(pts)
 
-    print(f"点云范围 / Point cloud bound: min={pcd.get_min_bound()}, max={pcd.get_max_bound()}")
-    print("开始可视化 / Starting visualization...")
+    print(f"Point cloud bounds: min={pcd.get_min_bound()}, max={pcd.get_max_bound()}")
+    print("Starting visualization...")
     o3d.visualization.draw_geometries([pcd], window_name="Sparse Reconstruction")
 
 def run_colmap_command(cmd, cwd=None):
@@ -444,13 +445,13 @@ def dense_reconstruction(colmap_path, images_path, sparse_path, dense_path):
         "--output_path", fused_ply,
         "--StereoFusion.num_threads","16"
     ])
-    print("Stereo Fusion 完成。\n")
+    print("Stereo Fusion complete.\n")
     print(f"Final dense point cloud is output to: {fused_ply}")
 
 
 def show_stereo_result(dense_ply_file):
     """
-    show the dense result (fused.ply)。
+    Show the dense result (fused.ply).
     """
     if not os.path.exists(dense_ply_file):
         print(f"error: point cloud file '{dense_ply_file}' unexist.")
@@ -460,7 +461,7 @@ def show_stereo_result(dense_ply_file):
     pcd = o3d.io.read_point_cloud(dense_ply_file)
     print(f"The point cloud contains {len(pcd.points)} points; starting visualisation...")
 
-    # 初始化 GUI 系统
+    # Initialise the GUI system
     app = o3d.visualization.gui.Application.instance
     app.initialize()
 

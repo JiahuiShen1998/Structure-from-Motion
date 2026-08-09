@@ -30,7 +30,7 @@ def extract_image_colors(image_path, image_id, reconstruction):
 
 def save_reconstruction_snapshot(reconstruction, snapshot_path):
     """
-    保存当前重建快照 / Save current reconstruction snapshot.
+    Save current reconstruction snapshot.
 
     Args:
         reconstruction (pycolmap.Reconstruction): Reconstruction object.
@@ -48,7 +48,6 @@ def save_reconstruction_snapshot(reconstruction, snapshot_path):
 
 def global_refinement_loop(options, mapper_options, mapper):
     """
-    全局精细化步骤，包括重新三角化和全局BA / 
     Perform global retriangulation and global bundle adjustment iteratively.
 
     Args:
@@ -70,7 +69,6 @@ def global_refinement_loop(options, mapper_options, mapper):
 
 def init_reconstruction(controller, mapper, mapper_options, reconstruction):
     """
-    初始化重建，寻找合适的初始图像对，并进行全局BA / 
     Initialize reconstruction by finding a good initial pair & performing global BA.
 
     Equivalent to IncrementalPipeline.initialize_reconstruction(...) in pycolmap.
@@ -87,7 +85,7 @@ def init_reconstruction(controller, mapper, mapper_options, reconstruction):
     options = controller.options
     init_pair = (options.init_image_id1, options.init_image_id2)
 
-    # 若没有指定初始图像对，则自动寻找 / If no init pair provided, find one
+    # If no init pair provided, find one
     if not options.is_initial_pair_provided():
         logging.info("Finding good initial image pair...")
         ret = mapper.find_initial_image_pair(mapper_options, *init_pair)
@@ -96,7 +94,7 @@ def init_reconstruction(controller, mapper, mapper_options, reconstruction):
             return pycolmap.IncrementalMapperStatus.NO_INITIAL_PAIR
         init_pair, two_view_geometry = ret
     else:
-        # 如果用户指定了初始对，但在重建中并不存在，直接返回错误 / If user-provided pair doesn't exist
+        # If the user-provided pair does not exist in the reconstruction
         if not all(reconstruction.exists_image(i) for i in init_pair):
             logging.info("=> Pair does not exist.")
             return pycolmap.IncrementalMapperStatus.BAD_INITIAL_PAIR
@@ -128,7 +126,7 @@ def init_reconstruction(controller, mapper, mapper_options, reconstruction):
 
 def reconstruct_single_model(controller, mapper, mapper_options, reconstruction):
     """
-    递增式重建子模型的逻辑 / Reconstruct a single sub-model incrementally.
+    Reconstruct a single sub-model incrementally.
 
     Equivalent to IncrementalPipeline.reconstruct_sub_model(...)
 
@@ -143,7 +141,7 @@ def reconstruct_single_model(controller, mapper, mapper_options, reconstruction)
     """
     mapper.begin_reconstruction(reconstruction)
 
-    # 如尚未注册任何图像，则先进行初始化 / If no registered images, initialize
+    # If no images are registered yet, initialize first
     if reconstruction.num_reg_images() == 0:
         init_status = init_reconstruction(controller, mapper, mapper_options, reconstruction)
         if init_status != pycolmap.IncrementalMapperStatus.SUCCESS:
@@ -157,7 +155,7 @@ def reconstruct_single_model(controller, mapper, mapper_options, reconstruction)
 
     reg_next_success, prev_reg_next_success = True, True
     while True:
-        # 如果连续两次都注册失败，则退出 / If registration fails consecutively, break
+        # Break if registration failed twice in a row
         if not (reg_next_success or prev_reg_next_success):
             break
         prev_reg_next_success = reg_next_success
