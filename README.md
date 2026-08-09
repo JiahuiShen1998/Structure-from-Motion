@@ -248,6 +248,10 @@ COLMAP's own fisheye camera models, would avoid the crop.
 
 ## What I Built
 
+This is the cleanup and documentation pass on a five-person team project; the list below
+is limited to work that can be pointed at in this repository. Authorship of the original
+pipeline code is spread across the team and is not claimed here.
+
 - Refactored the two-frame matching experiment into
   [`03_feature_matching/match_shi_sift.py`](03_feature_matching/match_shi_sift.py):
   split a single top-to-bottom script into five functions, added an argparse CLI
@@ -261,11 +265,13 @@ COLMAP's own fisheye camera models, would avoid the crop.
   verified it against the archived output: mean absolute difference 1.00 / 255 on a raw
   4K frame. Hoisted the remap-table construction out of the per-frame loop and made it
   rebuild only on a resolution change.
-- Recovered the calibration record — `D`, and three runs with residuals 204.5 / 227.8 /
-  302.0 — and established why the two rejected fits are unusable rather than merely
-  worse: their alternating-sign coefficients make
-  `estimateNewCameraMatrixForUndistortRectify` return a degenerate camera. Written up
-  in [`01_calibration/README.md`](01_calibration/README.md).
+- Recovered the calibration record and reproduced it, which showed the published
+  intrinsics come from a fit that terminated rather than converged: the value archived
+  as `res` is the RMS reprojection error in pixels (204.5, against ~1 px for a healthy
+  chessboard calibration), two of the source views are jointly degenerate, and dropping
+  one or the other yields intrinsics differing by a factor of 25. That also explains why
+  `CALIB_CHECK_COND` had to be disabled. Written up with the reproduction in
+  [`01_calibration/README.md`](01_calibration/README.md).
 - Gave every stage a uniform argparse CLI so it runs standalone, replacing paths
   hardcoded to one developer's machine; `sfm_pipeline.py` now resolves COLMAP from
   `--colmap`, `$COLMAP_EXE` or `PATH`, and can run headless.
@@ -282,13 +288,6 @@ COLMAP's own fisheye camera models, would avoid the crop.
   never reach the reconstruction, established by reading the camera table out of the
   shipped `database.db`.
 
-<!-- TODO(author): the stages below still need attribution. For each, either
-     "Implemented" (you wrote it) or "Ran and tuned" (someone else wrote it, you
-     operated it): calibrate_fisheye.py, sfm_pipeline.py's extract/match functions,
-     incremental_pipeline.py, bundle_adjustment.py, extract_frames.py,
-     view_pointcloud.py, and which report chapters. Git history cannot settle this --
-     all of it was bulk-uploaded in one batch through the GitLab web editor. See
-     docs/AUTHOR_QUESTIONS.md section A. -->
 
 ---
 
